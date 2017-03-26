@@ -72,7 +72,7 @@ function verifyFace(faceId) {
 		});
 	});
 }
-
+/*
 window.onload = function() 
 {
 	function getFaceList() {
@@ -102,3 +102,4 @@ window.onload = function()
 		});
 	}
 }
+*/
