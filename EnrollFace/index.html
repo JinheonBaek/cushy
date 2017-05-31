@@ -26,9 +26,14 @@
 	<script type="text/javascript" src="cogEnrollFace.js"></script>
 
 	<script language="JavaScript">
+		var availiable_snapshot = 0; //0: Face is not detected, 1: Detected Face is small, 2: availiable
+		var wait_snapshot = false; //If face is detected, wait 1 seconds through this variable
+		var process_snapshot = false; //In processing snapshot state, can't acess take_snapshot
+
 		//Track & Recognize face
 		window.onload = function() {
-			var isDetected = false;
+			$("#snapshotButton").hide();
+
 			var video = document.getElementById('video');
 			var canvas = document.getElementById('canvas');
 			var context = canvas.getContext('2d');
@@ -45,30 +50,87 @@
 
 				if (event.data.length === 0)
 				{
-				// No face were detected in this frame.
-				} else {
-
+					// No face were detected in this frame.
+					if (wait_snapshot == false)
+					{
+						availiable_snapshot = 0;
+						//$("#snapshotButton").hide();
+					}
+				} 
+				else {
 					event.data.forEach(function(rect) {
-					context.strokeStyle = '#a64ceb';
-					context.strokeRect(rect.x, rect.y, rect.width, rect.height);
-					context.font = '11px Helvetica';
-					context.fillStyle = "#fff";
-					context.fillText('x: ' + rect.x + 'px', rect.x + rect.width + 5, rect.y + 11);
-					context.fillText('y: ' + rect.y + 'px', rect.x + rect.width + 5, rect.y + 22);
+						context.strokeStyle = '#a64ceb';
+						context.strokeRect(rect.x, rect.y, rect.width, rect.height);
+						context.font = '11px Helvetica';
+						context.fillStyle = "#fff";
+						context.fillText('x: ' + rect.x + 'px', rect.x + rect.width + 5, rect.y + 11);
+						context.fillText('y: ' + rect.y + 'px', rect.x + rect.width + 5, rect.y + 22);
+						document.getElementById('trackInfo').innerHTML = rect.width + '*' + rect.height;
+						
+						if (process_snapshot == false)
+						{
+							if (rect.width >= 200)
+							{
+								wait_snapshot = true;
+								availiable_snapshot = 2;
+								//$("#snapshotButton").show();
+								sleep(1000).then(() => {
+									// Do something after the sleep!
+									wait_snapshot = false;
+								})
+							}
+							else
+							{	
+								if (wait_snapshot == false)
+								{
+									availiable_snapshot = 1;
+									//$("#snapshotButton").hide();
+								}
+							}
+						}
 					});
 				}
 			});
 		};
+
+		//Take Snapshot
+		function snapshot() {
+			$("#snapshotButton").hide();
+
+			if (availiable_snapshot == 2)
+			{
+				video.pause();
+				process_snapshot = true;
+
+				document.getElementById('resultInfo').innerHTML = '서버에 데이터를 저장중입니다.' + '<br>';
+				
+				process_snapshot = takeSnapshot();
+			}
+			else if (availiable_snapshot == 1)
+			{
+				alert("Detected face is small");
+			}
+			else
+			{
+				alert("No face is detected");
+			}
+		}
+
+		function sleep (time) {
+  			return new Promise((resolve) => setTimeout(resolve, time));
+		}
 	</script>
 
 	<!-- Hidden form and button to upload image on server -->
-	<div id="snapshotButton">
+	<div id="EnrollInfo">
 		<form id="myform" method="post" action="upload.php">
 			Username: <input type="text" name="usrname" id="usrname"><br>
-			<input id="mydata" type="hidden" name="mydata" value="">
-			<input id="imgname" type="hidden" name="imgname" value="">
-			<input type=button value="Take Snapshot" onClick="snapshot()">
+			<input type=button id="snapshotButton" value="Take Snapshot" onClick="snapshot()">
 		</form>
+	</div>
+
+	<div class="track">
+		<p id="trackInfo"> </p>
 	</div>
 
 	<div class="result">
@@ -81,13 +143,6 @@
 		<!-- Make canvas for traking face -->
 		<canvas id="canvas" width="640" height="480"></canvas>
 	</div>
-
-	<script language="JavaScript">
-		function snapshot() {
-			video.pause();
-			takeSnapshot();
-		}
-	</script>
 
 	<!-- Configure a few setting & Attach camera -->
 	<script language="JavaScript">

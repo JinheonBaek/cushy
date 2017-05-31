@@ -26,11 +26,15 @@
 	<script type="text/javascript" src="cogFace.js"></script>
 
 	<script language="JavaScript">
-		var webcamon = false;
+		var availiable_snapshot = 0; //0: Face is not detected, 1: Detected Face is small, 2: availiable
+		var wait_snapshot = false; //If face is detected, wait 1 seconds through this variable
+		var process_snapshot = false; //In processing snapshot state, can't acess take_snapshot
+		var iswebcamOn = false; //Stop verify face untill webcamOn is true
 		
 		//Track & Recognize face
 		window.onload = function() {
-			var isDetected = false;
+			$("#snapshotButton").hide();
+
 			var video = document.getElementById('video');
 			var canvas = document.getElementById('canvas');
 			var context = canvas.getContext('2d');
@@ -47,53 +51,93 @@
 
 				if (event.data.length === 0)
 				{
-				// No face were detected in this frame.
-				} else {
-
-					event.data.forEach(function(rect) {
-					context.strokeStyle = '#a64ceb';
-					context.strokeRect(rect.x, rect.y, rect.width, rect.height);
-					context.font = '11px Helvetica';
-					context.fillStyle = "#fff";
-					context.fillText('x: ' + rect.x + 'px', rect.x + rect.width + 5, rect.y + 11);
-					context.fillText('y: ' + rect.y + 'px', rect.x + rect.width + 5, rect.y + 22);
-					});
-					
-					if (webcamon == true)
+					// No face were detected in this frame.
+					if (wait_snapshot == false)
 					{
-						if (isDetected == false)
-						{
-							isDetected = true;
-
-							tracking.track('#video', tracker, { camera: false });
-
-							setTimeout(function() { tracking.track('#video', tracker, { camera: true }); isDetected = false; }, 10000);
-							
-							snapshot();
-						}
+						availiable_snapshot = 0;
+						$("#snapshotButton").hide();
 					}
+				} 
+				else {
+					event.data.forEach(function(rect) {
+						context.strokeStyle = '#a64ceb';
+						context.strokeRect(rect.x, rect.y, rect.width, rect.height);
+						context.font = '11px Helvetica';
+						context.fillStyle = "#fff";
+						context.fillText('x: ' + rect.x + 'px', rect.x + rect.width + 5, rect.y + 11);
+						context.fillText('y: ' + rect.y + 'px', rect.x + rect.width + 5, rect.y + 22);
+						
+						if (process_snapshot == false)
+						{
+							if (rect.width >= 150)
+							{
+								process_snapshot = true;
+								wait_snapshot = true;
+								availiable_snapshot = 2;
+								$("#snapshotButton").show();
+								sleep(1000).then(() => {
+									// Do something after the sleep!
+									wait_snapshot = false;
+									snapshot();
+								})
+							}
+							else
+							{	
+								if (wait_snapshot == false)
+								{
+									availiable_snapshot = 1;
+									$("#snapshotButton").hide();
+								}
+							}
+						}
+					});
 				}
 			});
 		};
 
-		function webcamOn()
-		{
-			webcamon = true;
+		//Take Snapshot
+		function snapshot() {
+			$("#snapshotButton").hide();
+
+			if (availiable_snapshot == 2)
+			{
+				video.pause();
+
+				document.getElementById('resultInfo').innerHTML = '서버에 데이터를 저장중입니다.' + '<br>';
+				process_snapshot = takeSnapshot();
+			}
+			else if (availiable_snapshot == 1)
+			{
+				alert("Detected face is small");
+			}
+			else
+			{
+				//alert("No face is detected");
+			}
 		}
 
+		function webcamOn()
+		{
+			iswebcamOn = true;
+		}
+		
 		function webcamOff()
 		{
-			webcamon = false;
+			iswebcamOn = false;
+		}
+
+		function sleep (time) {
+  			return new Promise((resolve) => setTimeout(resolve, time));
 		}
 	</script>
 
 	<!-- Hidden form and button to upload image on server -->
 	<div id="snapshotButton">
 		<form id="myform" method="post" action="upload.php">
-			<input id="mydata" type="hidden" name="mydata" value="">
-			<input id="imgName" type="hidden" name="imgName" value="">
 			<input type=button value="On Webcam" onClick="webcamOn()">
 			<input type=button value="Off Webcam" onClick="webcamOff()">
+			<input id="mydata" type="hidden" name="mydata" value="">
+			<input id="imgName" type="hidden" name="imgName" value="">
 		</form>
 	</div>
 
@@ -108,15 +152,9 @@
 		<canvas id="canvas" width="640" height="480"></canvas>
 	</div>
 
+	<!-- Itit -->
 	<script language="JavaScript">
-		function snapshot() {
-			video.pause();
-			takeSnapshot();
-		}
-	</script>
-
-	<!-- Configure a few setting & Attach camera -->
-	<script language="JavaScript">
+		// Configure a few setting & Attach camera
 		Webcam.set({
 			width: 640,
 			height: 480,

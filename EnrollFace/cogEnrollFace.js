@@ -20,6 +20,7 @@ function addFace(usrName) {
 				xhrObj.setRequestHeader("Ocp-Apim-Subscription-Key", subscriptionKey);
 			},
 			type: "POST",
+			async: false,
 			// Request body
 			data: "{" +
 				"\"url\":\"" + imgPath +
@@ -32,4 +33,5 @@ function addFace(usrName) {
 			alert("error");
 		});
 	});
+	video.play();
 }

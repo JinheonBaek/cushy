@@ -15,9 +15,6 @@ function takeSnapshot() {
 
 			//Show snapshot image source code : img src = data_uri ('<img src="'+data_uri+'"/>')
 
-			//Show snapshot image in div block
-			document.getElementById('resultInfo').innerHTML = '서버에 데이터를 저장중입니다.' + '<br>';
-
 			//Save raw_image_data in mydata value
 			document.getElementById('mydata').value = raw_image_data;
 
@@ -50,4 +47,10 @@ function takeSnapshot() {
 			}); 				
 		}
 	);
+
+	return false;
+}
+
+function sleep (time) {
+  	return new Promise((resolve) => setTimeout(resolve, time));
 }
