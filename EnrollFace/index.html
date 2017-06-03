@@ -32,8 +32,6 @@
 
 		//Track & Recognize face
 		window.onload = function() {
-			$("#snapshotButton").hide();
-
 			var video = document.getElementById('video');
 			var canvas = document.getElementById('canvas');
 			var context = canvas.getContext('2d');
@@ -95,8 +93,6 @@
 
 		//Take Snapshot
 		function snapshot() {
-			$("#snapshotButton").hide();
-
 			if (availiable_snapshot == 2)
 			{
 				video.pause();
